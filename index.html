@@ -30,10 +30,11 @@ summary{cursor:pointer;font-weight:600}
 <script>
 const LAT=-38.0055, LON=-57.5426;
 const P_WARN=25, P_BAD=50, MM_WARN=0.1, MM_BAD=0.5;
-const WIND_WARN=20, GUST_WARN=35, GUST_BAD=50;
+// viento: cuenta sobre todo el que viene de frente (km/h)
+const HEAD_WARN=12, HEAD_BAD=25, HGUST_WARN=25, HGUST_BAD=40, SIDE_WARN=40;
 const TRIPS=[
-  {n:"🏢 Ida",t:"7:30",h:[7,8],rumbo:337.5},
-  {n:"🏋️ Vuelta",t:"16:00",h:[16,17],rumbo:157.5}
+  {n:"🏢 Ida al trabajo",t:"7:30",h:[7,8],rumbo:337.5},
+  {n:"🏋️ Vuelta al gym",t:"16:00",h:[16,17],rumbo:157.5}
 ];
 const C=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
 const nom=d=>C[Math.round(d/22.5)%16], rad=d=>d*Math.PI/180;
@@ -64,15 +65,17 @@ function render(){
     const oscuro=g("is_day").includes(0);
 
     const rainB=prob>=P_BAD||mm>=MM_BAD, rainW=prob>=P_WARN||mm>=MM_WARN;
-    const windB=gust>=GUST_BAD, windW=gust>=GUST_WARN||avg>=WIND_WARN;
+    const c=Math.cos(rad(rel)), headAvg=Math.max(0,avg*c), headGust=Math.max(0,gust*c), sideGust=Math.abs(gust*Math.sin(rad(rel)));
+    const windB=headAvg>=HEAD_BAD||headGust>=HGUST_BAD;
+    const headW=headAvg>=HEAD_WARN||headGust>=HGUST_WARN, windW=headW||sideGust>=SIDE_WARN;
     const fog=vis<2000;
     let lvl="ok", big="😎", txt="Salí tranquilo";
     if(nubes>=60){big="☁️";}
-    if(rainB&&windB){lvl="bad";big="⛈";txt="Lluvia y viento fuerte";}
+    if(rainB&&windB){lvl="bad";big="⛈";txt="Lluvia y viento de frente";}
     else if(rainB){lvl="bad";big="☔";txt="Te mojás: capa de lluvia";}
-    else if(windB){lvl="bad";big="💨";txt="Viento fuerte";}
+    else if(windB){lvl="bad";big="💨";txt="Viento de frente fuerte";}
     else if(rainW){lvl="warn";big="🌦";txt="Puede llover: llevá capa";}
-    else if(windW){lvl="warn";big="💨";txt=head>=10?"Viento de frente":"Viento molesto";}
+    else if(windW){lvl="warn";big="💨";txt=headW?"Viento de frente":"Ráfagas de costado";}
     else if(fog){lvl="warn";big="🌫";txt="Niebla: ojo";}
 
     const dir=Math.abs(head)<10?"de costado":head>0?"de frente":"de cola";
