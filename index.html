@@ -29,8 +29,8 @@ const P_WARN=25, P_BAD=50;        // % prob. de lluvia (bici)
 const MM_WARN=0.1, MM_BAD=0.5;    // mm en la franja
 const WIND_WARN=20, GUST_WARN=35, GUST_BAD=50; // km/h (bici)
 const TRIPS=[
-  {n:"Ida al trabajo",t:"7:30 → 8:00",h:[7,8],rumbo:337.5},   // NNO
-  {n:"Vuelta al gym",t:"16:00 → 16:30",h:[16,17],rumbo:157.5} // SSE
+  {n:"Ida",t:"7:30",h:[7,8],rumbo:337.5},   // NNO
+  {n:"Vuelta",t:"16:00",h:[16,17],rumbo:157.5} // SSE
 ];
 const C=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
 const nom=d=>C[Math.round(d/22.5)%16];
