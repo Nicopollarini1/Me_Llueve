@@ -1,0 +1,14 @@
+{
+  "name": "¿Me llueve?",
+  "short_name": "¿Me llueve?",
+  "description": "Lluvia y viento para ir en bici al trabajo y al gym",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101318",
+  "theme_color": "#1a1f27",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

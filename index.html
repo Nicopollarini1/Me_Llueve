@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>¿Me llueve?</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a1f27">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f5f7;--c:#fff;--t:#14181f;--m:#667085;--ok:#1a8f4c;--w:#c98a00;--b:#d23b3b}
+@media(prefers-color-scheme:dark){:root{--bg:#101318;--c:#1a1f27;--t:#eef1f5;--m:#9aa3b0}}
+body{margin:0 auto;max-width:480px;padding:16px;background:var(--bg);color:var(--t);font:16px system-ui,sans-serif}
+h1{font-size:20px;margin:0 0 12px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border:0;border-radius:10px;background:var(--c);color:var(--t);font:inherit;cursor:pointer}
+.tabs button.on{outline:2px solid var(--t)}
+.card{background:var(--c);border-radius:14px;padding:14px;margin-bottom:12px;border-left:6px solid var(--ok)}
+.card.warn{border-color:var(--w)}.card.bad{border-color:var(--b)}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.v{font-size:22px;font-weight:700;margin:6px 0}
+.m{color:var(--m);font-size:14px;line-height:1.6}
+</style></head><body>
+<h1>¿Me llueve? · Mar del Plata</h1>
+<div class="tabs"><button id="d0" class="on">Hoy</button><button id="d1">Mañana</button></div>
+<div id="out" class="m">Cargando…</div>
+<script>
+// Ajustá estos umbrales a tu gusto
+const LAT=-38.0055, LON=-57.5426;
+const P_WARN=25, P_BAD=50;        // % prob. de lluvia (bici)
+const MM_WARN=0.1, MM_BAD=0.5;    // mm en la franja
+const WIND_WARN=20, GUST_WARN=35, GUST_BAD=50; // km/h (bici)
+const TRIPS=[
+  {n:"Ida al trabajo",t:"7:30 → 8:00",h:[7,8],rumbo:337.5},   // NNO
+  {n:"Vuelta al gym",t:"16:00 → 16:30",h:[16,17],rumbo:157.5} // SSE
+];
+const C=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const nom=d=>C[Math.round(d/22.5)%16];
+const rad=d=>d*Math.PI/180;
+let data=null, day=0;
+
+async function load(){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
+  `&hourly=precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,apparent_temperature,cloud_cover,uv_index,visibility,is_day`+
+  `&forecast_days=2&wind_speed_unit=kmh&timezone=America%2FArgentina%2FBuenos_Aires`;
+  try{ data=(await (await fetch(u)).json()).hourly; render(); }
+  catch(e){ document.getElementById("out").textContent="No pude cargar el pronóstico. Revisá tu conexión."; }
+}
+
+function render(){
+  const out=document.getElementById("out"); out.innerHTML="";
+  TRIPS.forEach(tr=>{
+    const ix=tr.h.map(h=>day*24+h);
+    const g=k=>ix.map(i=>data[k][i]);
+    const prob=Math.max(...g("precipitation_probability"));
+    const mm=g("precipitation").reduce((a,b)=>a+b,0);
+    const gust=Math.max(...g("wind_gusts_10m"));
+    const sp=g("wind_speed_10m"), dr=g("wind_direction_10m");
+    const avg=sp.reduce((a,b)=>a+b,0)/sp.length;
+    const dFrom=dr[0];
+    const rel=dFrom-tr.rumbo;
+    const head=avg*Math.cos(rad(rel));   // + de frente, - de cola
+    const side=avg*Math.sin(rad(rel));   // + desde la derecha
+    let lvl="ok", txt="Despejado, andá tranquilo";
+    const rain = prob>=P_BAD||mm>=MM_BAD, rainW = prob>=P_WARN||mm>=MM_WARN;
+    const wind = gust>=GUST_BAD, windW = gust>=GUST_WARN||avg>=WIND_WARN;
+    if(rain||wind){lvl="bad";txt=rain&&wind?"Lluvia y viento fuertes":rain?"Probable lluvia":"Viento fuerte";}
+    else if(rainW||windW){lvl="warn";txt=rainW&&windW?"Puede llover y hay viento":rainW?"Chance de lluvia":"Viento molesto";}
+    const frente=Math.abs(head)<5?"sin componente de frente":head>0?`de frente ${Math.round(head)} km/h`:`de cola ${Math.round(-head)} km/h`;
+    const lado=Math.abs(side)<5?"":` · lateral ${side>0?"derecha":"izquierda"} ${Math.round(Math.abs(side))} km/h`;
+    const av=k=>g(k).reduce((a,b)=>a+b,0)/ix.length;
+    const temp=Math.round(av("temperature_2m")), ap=Math.round(av("apparent_temperature"));
+    const nubes=av("cloud_cover"), uv=Math.max(...g("uv_index")), vis=Math.min(...g("visibility"));
+    const oscuro=g("is_day").includes(0);
+    const cielo=nubes<25?"☀️ Soleado":nubes<60?"🌤 Parcial":"☁️ Nublado";
+    const tips=[];
+    if(oscuro)tips.push("🔦 Todavía oscuro: luces y ropa clara");
+    if(vis<2000){tips.push("🌫 Niebla: poca visibilidad");if(lvl=="ok"){lvl="warn";txt="Niebla, andá con cuidado";}}
+    if(ap<=8)tips.push("🧤 Frío: abrigate, guantes");
+    if(ap>=30)tips.push("💧 Calor: llevá agua");
+    if(uv>=6)tips.push("🧴 UV alto: protector");
+    out.insertAdjacentHTML("beforeend",`<div class="card ${lvl}">
+      <div class="top"><b>${tr.n}</b><span class="m">${tr.t}</span></div>
+      <div class="v">${txt}</div>
+      <div class="m">🌧 Prob. ${prob}% · ${mm.toFixed(1)} mm<br>
+      💨 ${Math.round(avg)} km/h del ${nom(dFrom)} · ráfagas ${Math.round(gust)}<br>
+      🧭 ${frente}${lado}<br>
+      ${cielo} · 🌡 ${temp}° (sens. ${ap}°) · UV ${uv.toFixed(0)}
+      ${tips.length?"<br><b>"+tips.join("<br>")+"</b>":""}</div></div>`);
+  });
+}
+["d0","d1"].forEach((id,i)=>document.getElementById(id).onclick=()=>{
+  day=i; document.getElementById("d0").classList.toggle("on",i==0);
+  document.getElementById("d1").classList.toggle("on",i==1); if(data)render();
+});
+load();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script></body></html>
