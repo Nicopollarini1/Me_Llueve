@@ -88,14 +88,14 @@ function render(){
     const fog=vis<2000;
     let lvl="ok", big="😎", txt="Salí tranquilo";
     if(nubes>=60){big="☁️";}
-    if(rainB&&windB){lvl="bad";big="⛈";txt="Lluvia y viento de frente";}
+    if(rainB&&windB){lvl="bad";big="⛈";txt="Lluvia y viento en contra";}
     else if(rainB){lvl="bad";big="☔";txt="Te mojás: capa de lluvia";}
-    else if(windB){lvl="bad";big="💨";txt="Viento de frente fuerte";}
+    else if(windB){lvl="bad";big="💨";txt="Viento en contra fuerte";}
     else if(rainW){lvl="warn";big="🌦";txt="Puede llover: llevá capa";}
-    else if(windW){lvl="warn";big="💨";txt=headW?"Viento de frente":"Ráfagas de costado";}
+    else if(windW){lvl="warn";big="💨";txt=headW?"Viento en contra":"Ráfagas de costado";}
     else if(fog){lvl="warn";big="🌫";txt="Niebla: ojo";}
 
-    const dir=Math.abs(head)<10?"de costado":head>0?"de frente":"de cola";
+    const dir=Math.abs(head)<10?"de costado":head>0?"en contra":"a favor";
     const tips=[];
     if(oscuro)tips.push("🔦 Luces");
     if(fog&&txt!="Niebla: ojo")tips.push("🌫 Niebla");
